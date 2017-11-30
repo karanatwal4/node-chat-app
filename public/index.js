@@ -1,12 +1,25 @@
-
 var socket = io();
+
+function scrollToBottom () {
+  var messages = jQuery("#messages");
+  var newMessage = messages.children('li:last-child');
+
+  var scrollTop = messages.prop('scrollTop');
+  var scrollHeight = messages.prop('scrollHeight');
+  var clientHeight = messages.prop('clientHeight');
+  var newMessageHeight = newMessage.innerHeight();
+  var lastMessageHeight = newMessage.prev().innerHeight();
+
+  if(scrollTop + clientHeight + newMessageHeight + lastMessageHeight >= scrollHeight) {
+    messages.scrollTop(scrollHeight);
+  }
+}
 
 socket.on('connect', () => {
   console.log('Connected to server');
 });
 
 socket.on('newMessage', function (message) {
-  console.log('New message: ', message);
   var formattedTime = moment(message.createdAt).format('h:mm a');
   var template = jQuery("#message-template").html();
   var html = Mustache.render(template, {
@@ -15,10 +28,8 @@ socket.on('newMessage', function (message) {
     createdAt: formattedTime
   });
 
-  // var li = jQuery('<li></li>');
-  // li.text(`${message.from} ${formattedTime}: ${message.text}`);
-  //
-   jQuery("#messages").append(html);
+ jQuery("#messages").append(html);
+ scrollToBottom();
 });
 
 socket.on('disconnect', () => {
@@ -33,14 +44,9 @@ socket.on('geoLocationMessage', (message) => {
     url: message.url,
     createdAt: formattedTime
   });
-  // var li = jQuery('<li></li>');
-  // var a = jQuery('<a target="_blank">My current geolocation</a>');
-  //
-  // li.text(`${message.from} ${formattedTime}: `);
-  // a.attr('href', message.url);
-  // li.append(a);
 
   jQuery("#messages").append(html);
+  scrollToBottom();
 });
 
 jQuery("#message-form").on('submit', function (e) {
@@ -62,7 +68,6 @@ locationButton.on('click', function() {
 
   locationButton.attr('disabled', 'disabled').text('Sending location...');
   navigator.geolocation.getCurrentPosition(function(position) {
-    console.log(position);
     locationButton.removeAttr('disabled').text('Send location');
     socket.emit('sendGeolocation', {
       latitude: position.coords.latitude,
