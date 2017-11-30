@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const socketIO = require('socket.io');
 const http = require('http');
-const {generateMessage} = require('./utils/message');
+const {generateMessage, generateLocationMessage} = require('./utils/message');
 
 const port = process.env.PORT || 3000;
 const publicPath = path.join(__dirname, '../public');
@@ -22,9 +22,12 @@ io.on('connection', (socket) => {
 
   socket.on('createMessage', (message, callback) => {
     console.log('Create message: ', message);
-
     io.emit('newMessage', generateMessage(message.from, message.text));
     callback();
+  });
+
+  socket.on('sendGeolocation', (coords) => {
+    io.emit('geoLocationMessage', generateLocationMessage('User', coords.latitude, coords.longitude));
   });
 
   socket.on('disconnect', () => {
